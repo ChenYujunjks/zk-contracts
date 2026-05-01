@@ -52,7 +52,7 @@ contract MyContract {
         merkleRoot = _merkleRoot;
     }
 
-    // 🔥 debug用：检查 hash 是否一致（非常重要）
+    //  debug用：检查 hash 是否一致
     function computeMessageHash(
         string calldata _content
     ) external pure returns (uint256) {
