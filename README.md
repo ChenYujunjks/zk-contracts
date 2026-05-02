@@ -1,57 +1,320 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# 🧠 ZK Message App (Hardhat + Circom + Groth16)
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+A decentralized messaging system that leverages Zero-Knowledge Proofs to enable **anonymous but permissioned communication**.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+---
 
-## Project Overview
+## 🚀 What This Project Is
 
-This example project includes:
+This project is **not just a messaging dApp**.
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+It demonstrates a more advanced paradigm:
 
-## Usage
+> ❌ Not "who sent the message"
+> ✅ But "whether the sender is allowed to send it"
 
-### Running Tests
+This system uses:
 
-To run all the tests in the project, execute the following command:
+- **Hardhat** → smart contract development & local testing
+- **Circom** → circuit definition
+- **snarkjs** → proof generation
+- **Merkle Tree** → membership verification
+- **Groth16** → on-chain verification
 
-```shell
-npx hardhat test
+---
+
+## 🔥 Core Idea
+
+Instead of:
+
+```txt
+0x123 sends a message
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
+We have:
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
+```txt
+Someone sends a message, and proves:
+
+✔ They belong to an authorized group
+✔ The message is valid
+✔ They haven’t sent before
+❌ But we don’t know who they are
 ```
 
-### Make a deployment to Sepolia
+---
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+## 🧩 ZK Design Philosophy
 
-To run the deployment to a local chain:
+### 1️⃣ Identity → Proof
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+Traditional systems:
+
+```txt
+address → identity → permission
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+This system:
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+```txt
+proof → permission
 ```
 
-After setting the variable, you can run the deployment with the Sepolia network:
+👉 The contract verifies **validity**, not identity.
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+---
+
+### 2️⃣ Anonymous but Permissioned
+
+Anyone **cannot** send messages.
+
+Users must:
+
+- Be part of a **Merkle Tree whitelist**
+- Generate a valid zk proof
+
+👉 This creates:
+
+> **Anonymous but controlled communication system**
+
+Use cases:
+
+- DAO anonymous voting
+- Private communities
+- Whistleblowing systems
+
+---
+
+### 3️⃣ One-time Identity (Nullifier)
+
+Each user:
+
+```txt
+leaf → nullifier → nullifierHash
 ```
+
+The contract enforces:
+
+```solidity
+require(!usedNullifierHashes[nullifierHash]);
+```
+
+👉 Meaning:
+
+- Anonymous
+- But cannot spam
+- Cannot reuse identity
+
+---
+
+### 4️⃣ Message Binding (Critical)
+
+Proof is tied to:
+
+```txt
+messageHash = hash(content)
+```
+
+👉 This guarantees:
+
+- You cannot reuse proof with different content
+- Proof = authorization for **this exact message**
+
+---
+
+## 🏗 Architecture
+
+```txt
+User Input
+   ↓
+Compute messageHash
+   ↓
+Generate zk proof (Circom + snarkjs)
+   ↓
+Send to Smart Contract
+   ↓
+Contract verifies:
+   - Merkle root
+   - messageHash
+   - nullifierHash uniqueness
+   ↓
+Store message
+```
+
+---
+
+## 📁 Project Structure
+
+```txt
+contracts/
+  Groth16Verifier.sol
+  MyContract.sol
+
+scripts/
+  deploy.ts
+  send.ts
+
+circuits/
+  merkle_message.circom
+
+test/
+  (optional)
+```
+
+---
+
+## ⚙️ Local Setup
+
+### 1. Install dependencies
+
+```bash
+pnpm install
+```
+
+---
+
+### 2. Compile contracts
+
+```bash
+pnpm hardhat compile
+```
+
+---
+
+### 3. Start local blockchain
+
+```bash
+pnpm hardhat node
+```
+
+---
+
+### 4. Deploy contracts
+
+```bash
+pnpm hardhat run scripts/deploy.ts --network localhost
+```
+
+You will get:
+
+```txt
+Groth16Verifier deployed to: 0x...
+MyContract deployed to: 0x...
+```
+
+---
+
+### 5. Update contract address
+
+In your `send.ts`:
+
+```ts
+const myContractAddress = "PASTE_DEPLOYED_ADDRESS_HERE";
+```
+
+---
+
+### 6. Send a message
+
+```bash
+pnpm hardhat run scripts/send.ts --network localhost
+```
+
+---
+
+## 🧪 ZK Proof Flow
+
+Proof generation includes:
+
+- Merkle path
+- leaf
+- nullifier
+- messageHash
+
+Outputs:
+
+```ts
+pA;
+pB;
+pC;
+publicSignals;
+```
+
+Contract verifies:
+
+```solidity
+verifier.verifyProof(...)
+```
+
+---
+
+## ⚠️ Important Notes
+
+### 1. Hardhat Node Reset
+
+Every time you restart:
+
+```txt
+pnpm hardhat node
+```
+
+👉 All contracts are wiped
+👉 You must redeploy
+
+---
+
+### 2. Proof Must Match Contract Inputs
+
+If transaction fails, likely causes:
+
+- ❌ Wrong merkleRoot
+- ❌ messageHash mismatch
+- ❌ nullifier reuse
+- ❌ incorrect publicSignals order
+
+---
+
+### 3. This Is Not Just Messaging
+
+Without ZK:
+
+```txt
+on-chain chat app
+```
+
+With ZK:
+
+```txt
+privacy-preserving permission system
+```
+
+👉 That’s the real upgrade.
+
+---
+
+## 🧠 What This Project Demonstrates
+
+This project showcases:
+
+- zk-SNARK integration with Solidity
+- Anonymous identity systems
+- Merkle-based membership verification
+- Anti-spam cryptographic design (nullifier)
+- Message integrity via proof binding
+
+---
+
+## 🚀 Future Improvements
+
+- Dynamic Merkle Tree updates
+- Frontend integration (Next.js)
+- Multi-message support per user (rate-limited nullifiers)
+- Off-chain storage + on-chain verification
+- zk-based access control systems
+
+---
+
+## 🧠 Final Insight
+
+> ZK is not about hiding data.
+> It’s about proving **validity without revealing truth**.
