@@ -15,7 +15,6 @@ contract MyContract {
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     struct Message {
-        address from;
         address to;
         string content;
         uint256 timestamp;
@@ -29,8 +28,7 @@ contract MyContract {
     mapping(uint256 => bool) public usedNullifierHashes;
     mapping(address => Message[]) private receivedMessages;
 
-    event MessageSent(
-        address indexed from,
+    event AnonymousMessageSent(
         address indexed to,
         string content,
         uint256 timestamp,
@@ -52,7 +50,6 @@ contract MyContract {
         merkleRoot = _merkleRoot;
     }
 
-    //  debug用：检查 hash 是否一致
     function computeMessageHash(
         string calldata _content
     ) external pure returns (uint256) {
@@ -77,26 +74,16 @@ contract MyContract {
         require(bytes(_content).length > 0, "Empty content");
         require(!usedNullifierHashes[_nullifierHash], "Proof already used");
 
-        // ✅ 关键：链上计算 messageHash
         uint256 messageHash = uint256(sha256(bytes(_content))) % FIELD_SIZE;
 
-        // ✅ public signals
-        uint[3] memory pubSignals = [
-            merkleRoot,
-            messageHash,
-            _nullifierHash
-        ];
+        uint[3] memory pubSignals = [merkleRoot, messageHash, _nullifierHash];
 
-        // ✅ 验证 proof
         bool ok = verifier.verifyProof(_pA, _pB, _pC, pubSignals);
         require(ok, "Invalid zk proof");
 
-        // ✅ 防重放
         usedNullifierHashes[_nullifierHash] = true;
 
-        // ✅ 存储消息
         Message memory newMessage = Message({
-            from: msg.sender,
             to: _to,
             content: _content,
             timestamp: block.timestamp,
@@ -105,9 +92,7 @@ contract MyContract {
 
         receivedMessages[_to].push(newMessage);
 
-        // ✅ emit（带 messageHash 方便 debug）
-        emit MessageSent(
-            msg.sender,
+        emit AnonymousMessageSent(
             _to,
             _content,
             block.timestamp,
@@ -116,19 +101,19 @@ contract MyContract {
         );
     }
 
-    function receiveMessagesContentWithSender(
+    function receiveMessagesContent(
         address _address
-    ) external view returns (string[] memory, address[] memory) {
+    ) external view returns (string[] memory, uint256[] memory) {
         uint256 messageCount = receivedMessages[_address].length;
 
         string[] memory contents = new string[](messageCount);
-        address[] memory senders = new address[](messageCount);
+        uint256[] memory timestamps = new uint256[](messageCount);
 
         for (uint256 i = 0; i < messageCount; i++) {
             contents[i] = receivedMessages[_address][i].content;
-            senders[i] = receivedMessages[_address][i].from;
+            timestamps[i] = receivedMessages[_address][i].timestamp;
         }
 
-        return (contents, senders);
+        return (contents, timestamps);
     }
 }
