@@ -1,6 +1,8 @@
 # Node modules
 /node_modules
 
+/deployments
+
 # Compilation output
 /dist
 
