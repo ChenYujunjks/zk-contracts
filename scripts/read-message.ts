@@ -14,18 +14,19 @@ async function main() {
   const deployment = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
   const myContractAddress = deployment.myContract;
 
+  const [, receiver] = await ethers.getSigners();
+  const receiverAddress = await receiver.getAddress();
+
   const myContract = await ethers.getContractAt(
     "MyContract",
     myContractAddress,
   );
 
-  const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-
   const [contents, timestamps] =
-    await myContract.receiveMessagesContent(receiver);
+    await myContract.receiveMessagesContent(receiverAddress);
 
   console.log("contract:", myContractAddress);
-  console.log("receiver:", receiver);
+  console.log("receiver:", receiverAddress);
   console.log("message count:", contents.length);
 
   for (let i = 0; i < contents.length; i++) {

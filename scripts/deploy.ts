@@ -13,7 +13,7 @@ async function main() {
   console.log("Groth16Verifier deployed to:", verifierAddress);
 
   const initialMerkleRoot = BigInt(
-    "20114032203026812992970109384137920290697703658836938679631117804875272340113",
+    "14737772644499278991679208581299162238634650254224536719371112806579116642370",
   );
 
   const MyContract = await ethers.getContractFactory("MyContract");
