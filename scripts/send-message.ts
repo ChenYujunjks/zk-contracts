@@ -1,10 +1,18 @@
 import { network } from "hardhat";
+import fs from "fs";
+import path from "path";
 
 async function main() {
   const { ethers } = await network.getOrCreate();
 
-  // 替换成 deploy.ts 输出的 MyContract 地址
-  const myContractAddress = "PASTE_MYCONTRACT_ADDRESS_HERE";
+  const deploymentPath = path.join(
+    process.cwd(),
+    "deployments",
+    "localhost.json",
+  );
+
+  const deployment = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
+  const myContractAddress = deployment.myContract;
 
   const myContract = await ethers.getContractAt(
     "MyContract",

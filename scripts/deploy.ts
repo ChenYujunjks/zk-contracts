@@ -1,4 +1,6 @@
 import { network } from "hardhat";
+import fs from "fs";
+import path from "path";
 
 async function main() {
   const { ethers } = await network.getOrCreate();
@@ -10,7 +12,6 @@ async function main() {
   const verifierAddress = await verifier.getAddress();
   console.log("Groth16Verifier deployed to:", verifierAddress);
 
-  // 必须替换成你 input.json 里的 root
   const initialMerkleRoot = BigInt(
     "20114032203026812992970109384137920290697703658836938679631117804875272340113",
   );
@@ -26,6 +27,27 @@ async function main() {
 
   console.log("MyContract deployed to:", myContractAddress);
   console.log("initialMerkleRoot:", initialMerkleRoot.toString());
+
+  const deploymentsDir = path.join(process.cwd(), "deployments");
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir);
+  }
+
+  fs.writeFileSync(
+    path.join(deploymentsDir, "localhost.json"),
+    JSON.stringify(
+      {
+        network: "localhost",
+        groth16Verifier: verifierAddress,
+        myContract: myContractAddress,
+        initialMerkleRoot: initialMerkleRoot.toString(),
+      },
+      null,
+      2,
+    ),
+  );
+
+  console.log("Saved deployment addresses to deployments/localhost.json");
 }
 
 main().catch((error) => {
