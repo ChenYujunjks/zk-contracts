@@ -10,6 +10,7 @@ async function main() {
   const verifierAddress = await verifier.getAddress();
   console.log("Groth16Verifier deployed to:", verifierAddress);
 
+  // 必须替换成你 input.json 里的 root
   const initialMerkleRoot = BigInt(
     "20114032203026812992970109384137920290697703658836938679631117804875272340113",
   );
@@ -21,7 +22,10 @@ async function main() {
   );
   await myContract.waitForDeployment();
 
-  console.log("MyContract deployed to:", await myContract.getAddress());
+  const myContractAddress = await myContract.getAddress();
+
+  console.log("MyContract deployed to:", myContractAddress);
+  console.log("initialMerkleRoot:", initialMerkleRoot.toString());
 }
 
 main().catch((error) => {

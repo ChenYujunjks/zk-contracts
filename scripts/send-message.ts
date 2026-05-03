@@ -3,16 +3,21 @@ import { network } from "hardhat";
 async function main() {
   const { ethers } = await network.getOrCreate();
 
-  const myContractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  // 替换成 deploy.ts 输出的 MyContract 地址
+  const myContractAddress = "PASTE_MYCONTRACT_ADDRESS_HERE";
 
   const myContract = await ethers.getContractAt(
     "MyContract",
     myContractAddress,
   );
 
+  // 本地 hardhat node 的第二个账户
   const to = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+
+  // 必须和你生成 proof 时的 content 完全一致
   const content = "hello from chicago";
 
+  // 替换成 snarkjs 生成的 proof calldata
   const pA: [string, string] = [
     "20965586098112829222813556016915087669954542751189854935782333862984480858735",
     "18368298985014105313316995069356994593258734829228957831262821238493317685976",
@@ -34,14 +39,18 @@ async function main() {
     "21797116690911420189159398884716680028985026228083968692773196953338076689984",
   ];
 
+  // 必须和 input.json / publicSignals 里的 nullifierHash 一致
   const nullifierHash =
     "1107508453626026628353350456432000344348342707812347227977620133814349151904";
 
-  console.log("Sending message...");
+  console.log("Sending anonymous whitelist message...");
   console.log("contract:", myContractAddress);
   console.log("to:", to);
   console.log("content:", content);
   console.log("nullifierHash:", nullifierHash);
+
+  const messageHash = await myContract.computeMessageHash(content);
+  console.log("on-chain computed messageHash:", messageHash.toString());
 
   const tx = await myContract.sendMessageWithProof(
     to,
